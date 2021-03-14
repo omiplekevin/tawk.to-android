@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Android Test tawk.to</string>
+
+    <string name="template_followers">%1$d followers</string>
+    <string name="template_following">%1$d following</string>
+    <string name="notes_edittext_placeholder">thoughts about this user…</string>
+    <string name="label_no_connection">No connection</string>
+</resources>

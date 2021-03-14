@@ -1,0 +1,68 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'dagger.hilt.android.plugin'
+apply from: 'dependencies.gradle'
+apply from: 'domains.gradle'
+
+android {
+    compileSdkVersion 29
+
+    defaultConfig {
+        applicationId "com.android.androidtesttawkto"
+        minSdkVersion 21
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "GITHUB_USERS_API", githubAPI)
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation kotlin
+    implementation googleDependencies
+    implementation glide
+    implementation gson
+    implementation retrofit
+    implementation rxjava
+    implementation okhttp
+    implementation hilt
+    implementation viewmodel
+    implementation timber
+
+    debugImplementation databaseDebug
+
+    kapt annotations
+
+    testImplementation testImplementationDependencies
+    testAnnotationProcessor testAnnotationProcessorDep
+
+    androidTestImplementation androidTestDependencies
+    androidTestAnnotationProcessor androidTestAnnotationProcessorDep
+
+}

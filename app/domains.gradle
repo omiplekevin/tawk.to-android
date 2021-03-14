@@ -1,0 +1,4 @@
+ext {
+    //githubAPI
+    githubAPI = "\"https://api.github.com/\""
+}
