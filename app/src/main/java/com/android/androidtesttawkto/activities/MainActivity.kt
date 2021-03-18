@@ -84,11 +84,18 @@ class MainActivity : AppCompatActivity() {
             Timber.d("onCreateOptionsMenu()")
             val searchItem: MenuItem = mainMenu.findItem(R.id.action_search)
             searchView = searchItem.actionView as SearchView
-            searchView.setOnCloseListener(object : SearchView.OnCloseListener {
-                override fun onClose(): Boolean {
+
+            searchItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener {
+                override fun onMenuItemActionExpand(item: MenuItem?): Boolean {
+                    Timber.d("onMenuItemActionExpand")
+                    return true
+                }
+
+                override fun onMenuItemActionCollapse(item: MenuItem?): Boolean {
+                    Timber.d("onMenuItemActionCollapse")
                     isSearching = false
                     searchQuery = ""
-                    searchView.setQuery("", false)
+                    refreshList()
                     return true
                 }
             })
@@ -116,7 +123,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onQueryTextChange(newText: String?): Boolean {
-                    isSearching = true
+                    if (newText != null) {
+                        isSearching = newText.isNotEmpty()
+                    }
                     return false
                 }
             })
@@ -136,18 +145,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         return super.onCreateOptionsMenu(mainMenu)
-    }
-
-    override fun onBackPressed() {
-        if (!searchView.isIconified) {
-            searchView.onActionViewCollapsed()
-            searchQuery = ""
-            isSearching = false
-            //refresh list
-            refreshList()
-        } else {
-            super.onBackPressed()
-        }
     }
 
     override fun onResume() {
@@ -256,6 +253,8 @@ class MainActivity : AppCompatActivity() {
                         if (latestId != startId) {
                             adapter.removeLoadingView()
                         }
+                    } else {
+                        Timber.d("blocked! current isSearching: $isSearching")
                     }
                 }
 
@@ -282,6 +281,7 @@ class MainActivity : AppCompatActivity() {
                     usersRecyclerView.visibility = View.VISIBLE
 
                     updateList(dataState.data)
+                    mainMenu.findItem(R.id.action_search).expandActionView()
 
                     if (latestId != startId && !isSearching) {
                         adapter.removeLoadingView()

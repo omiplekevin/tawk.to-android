@@ -62,7 +62,7 @@ class MainRepository constructor(
             Timber.d("new cached users: ${cachedUsers.size}")
             if (!loadMore) {
                 //if first time load of users list
-                Timber.d("emit on loadMore")
+                Timber.d("emit on !loadMore")
                 emit(DataState.Success(userCacheMapper.mapFromEntityList(cachedUsers)))
             } else {
                 //if list is currently paging
