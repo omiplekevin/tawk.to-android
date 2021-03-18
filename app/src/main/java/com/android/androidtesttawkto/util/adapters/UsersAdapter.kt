@@ -16,9 +16,10 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.DrawableCrossFadeTransition
 import kotlinx.android.synthetic.main.list_item_user.view.*
+import timber.log.Timber
 
 class UsersAdapter(
-    private var users: ArrayList<UserModel>
+    private var users: MutableList<UserModel>
 ) : RecyclerView.Adapter<BaseViewHolder>() {
 
     companion object {
@@ -84,7 +85,9 @@ class UsersAdapter(
     override fun getItemCount(): Int = users.size
 
     fun updateUsersList(usersList: List<UserModel>) {
-        users = ArrayList(usersList)
+        users = usersList.toMutableList()
+        Timber.d("updateUsersList, ${users.size}")
+        notifyDataSetChanged()
     }
 
     fun addToUsers(newUsersList: List<UserModel>) {
@@ -93,6 +96,7 @@ class UsersAdapter(
     }
 
     fun addLoadingView() {
+        Timber.d("adding loading view...")
         isLoaderVisible = true
         users.add(UserModel())
         notifyItemInserted(users.size - 1)
@@ -101,6 +105,7 @@ class UsersAdapter(
     fun getLastUserId() = users[(users.size - 1)].id
 
     fun removeLoadingView() {
+        Timber.d("removing loading view...")
         isLoaderVisible = false
         val pos = users.size - 1
         val dummyItem = users[pos]

@@ -7,31 +7,31 @@ data class UserNetworkEntity (
 
     @SerializedName("avatar_url")
     @Expose
-    val avatar_url: String = "",
+    val avatar_url: String? = "",
 
     @SerializedName("events_url")
     @Expose
-    val events_url: String = "",
+    val events_url: String? = "",
 
     @SerializedName("followers_url")
     @Expose
-    val followers_url: String = "",
+    val followers_url: String? = "",
 
     @SerializedName("following_url")
     @Expose
-    val following_url: String = "",
+    val following_url: String? = "",
 
     @SerializedName("gists_url")
     @Expose
-    val gists_url: String = "",
+    val gists_url: String? = "",
 
     @SerializedName("gravatar_id")
     @Expose
-    val gravatar_id: String = "",
+    val gravatar_id: String? = "",
 
     @SerializedName("html_url")
     @Expose
-    val html_url: String = "",
+    val html_url: String? = "",
 
     @SerializedName("id")
     @Expose
@@ -39,23 +39,23 @@ data class UserNetworkEntity (
 
     @SerializedName("login")
     @Expose
-    val login: String = "",
+    val login: String? = "",
 
     @SerializedName("node_id")
     @Expose
-    val node_id: String = "",
+    val node_id: String? = "",
 
     @SerializedName("organizations_url")
     @Expose
-    val organizations_url: String = "",
+    val organizations_url: String? = "",
 
     @SerializedName("received_events_url")
     @Expose
-    val received_events_url: String = "",
+    val received_events_url: String? = "",
 
     @SerializedName("repos_url")
     @Expose
-    val repos_url: String = "",
+    val repos_url: String? = "",
 
     @SerializedName("site_admin")
     @Expose
@@ -63,17 +63,17 @@ data class UserNetworkEntity (
 
     @SerializedName("starred_url")
     @Expose
-    val starred_url: String = "",
+    val starred_url: String? = "",
 
     @SerializedName("subscriptions_url")
     @Expose
-    val subscriptions_url: String = "",
+    val subscriptions_url: String? = "",
 
     @SerializedName("type")
     @Expose
-    val type: String = "",
+    val type: String? = "",
 
     @SerializedName("url")
     @Expose
-    val url: String = ""
+    val url: String? = ""
 )

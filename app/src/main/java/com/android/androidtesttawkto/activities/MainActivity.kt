@@ -7,10 +7,13 @@ import android.content.Intent
 import android.net.*
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -42,9 +45,13 @@ class MainActivity : AppCompatActivity() {
 
     private var isLoading: Boolean = false
     private var isSearching: Boolean = false
+    private var searchQuery: String? = ""
     private var startId: Int = 0
     private var latestId: Int = startId
     private lateinit var searchView: SearchView
+    private lateinit var listState: Parcelable
+    private lateinit var activityState: Bundle
+    private lateinit var mainMenu: Menu
 
     var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -56,6 +63,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        Timber.d("onCreate()")
+
+        if (savedInstanceState != null) {
+            isSearching = savedInstanceState.getBoolean("isSearchMode")
+            searchQuery = savedInstanceState.getString("searchQuery")
+        }
+
         setupConnectionListener()
         setupUI()
         subscribeObservers()
@@ -66,11 +80,15 @@ class MainActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main, menu)
         if (menu != null) {
-            val searchItem: MenuItem = menu.findItem(R.id.action_search)
+            mainMenu = menu
+            Timber.d("onCreateOptionsMenu()")
+            val searchItem: MenuItem = mainMenu.findItem(R.id.action_search)
             searchView = searchItem.actionView as SearchView
             searchView.setOnCloseListener(object : SearchView.OnCloseListener {
                 override fun onClose(): Boolean {
                     isSearching = false
+                    searchQuery = ""
+                    searchView.setQuery("", false)
                     return true
                 }
             })
@@ -90,6 +108,9 @@ class MainActivity : AppCompatActivity() {
             searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                 override fun onQueryTextSubmit(query: String?): Boolean {
                     isSearching = true
+                    searchQuery = query
+                    Timber.d("submit search: $searchQuery")
+                    searchView.setQuery(searchQuery, false)
                     viewModel.searchStateEvent(MainStateEvent.SearchUsersEvent, query)
                     return false
                 }
@@ -104,18 +125,50 @@ class MainActivity : AppCompatActivity() {
                 getSystemService(Context.SEARCH_SERVICE) as SearchManager
             searchView.setSearchableInfo(searchManager.getSearchableInfo(componentName))
         }
-        return super.onCreateOptionsMenu(menu)
+
+        if (isSearching) {
+            if (searchQuery != null) {
+                if (searchQuery!!.isNotEmpty()) {
+                    mainMenu.findItem(R.id.action_search).expandActionView()
+                    searchView.setQuery(searchQuery!!, true)
+                }
+            }
+        }
+
+        return super.onCreateOptionsMenu(mainMenu)
     }
 
     override fun onBackPressed() {
         if (!searchView.isIconified) {
             searchView.onActionViewCollapsed()
+            searchQuery = ""
             isSearching = false
             //refresh list
             refreshList()
         } else {
             super.onBackPressed()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Timber.d("onResume()")
+        if (::listState.isInitialized) {
+            usersRecyclerView.layoutManager?.onRestoreInstanceState(listState)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Timber.d("onPause()")
+        listState = usersRecyclerView.layoutManager?.onSaveInstanceState()!!
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        Timber.d("onSaveInstanceState()")
+        outState.putBoolean("isSearchMode", isSearching)
+        outState.putString("searchQuery", searchQuery)
     }
 
     private fun refreshList() {
@@ -148,13 +201,11 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun isLastPage(): Boolean {
-                Timber.d("on last page")
                 //last page is set to always false due to github's unspecified page(since parameter) total
                 return false
             }
 
             override fun isLoading(): Boolean {
-                Timber.d("is loading")
                 return isLoading
             }
         })
@@ -194,14 +245,17 @@ class MainActivity : AppCompatActivity() {
         viewModel.state.observe(this, { dataState ->
             when (dataState) {
                 is DataState.Success<List<UserModel>> -> {
-                    Timber.d("Updating list...")
-                    updateList(dataState.data)
+                    if (!isSearching) {
+                        Timber.d("updating list")
 
-                    listLoadingProgress.visibility = View.GONE
-                    usersRecyclerView.visibility = View.VISIBLE
+                        listLoadingProgress.visibility = View.GONE
+                        usersRecyclerView.visibility = View.VISIBLE
 
-                    if (latestId != startId) {
-                        adapter.removeLoadingView()
+                        updateList(dataState.data)
+
+                        if (latestId != startId) {
+                            adapter.removeLoadingView()
+                        }
                     }
                 }
 
@@ -213,13 +267,25 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 is DataState.LoadMore<List<UserModel>> -> {
-                    Timber.d("Loading more data: ${dataState.data}")
                     if (latestId != startId) {
                         adapter.removeLoadingView()
                     }
 
                     adapter.addToUsers(dataState.data)
                     isLoading = false
+                }
+
+                is DataState.SearchResult<List<UserModel>> -> {
+                    Timber.d("updating search result list")
+
+                    listLoadingProgress.visibility = View.GONE
+                    usersRecyclerView.visibility = View.VISIBLE
+
+                    updateList(dataState.data)
+
+                    if (latestId != startId && !isSearching) {
+                        adapter.removeLoadingView()
+                    }
                 }
 
                 is DataState.Loading -> {
@@ -234,7 +300,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateList(users: List<UserModel>) {
-        users.let { listOfUsers -> listOfUsers.let { adapter.updateUsersList(it) } }
+        if (users.isNotEmpty()) {
+            adapter.updateUsersList(users)
+        } else {
+            Timber.d("list is empty!!")
+            adapter.updateUsersList(arrayListOf())
+        }
         adapter.notifyDataSetChanged()
     }
 

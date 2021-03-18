@@ -8,6 +8,8 @@ sealed class DataState<out S> {
 
     data class LoadMore<out T>(val data: T): DataState<T>()
 
+    data class SearchResult<out T>(val data: T): DataState<T>()
+
     data class Error(val exception: Exception): DataState<Nothing>()
 
     object Loading: DataState<Nothing>()

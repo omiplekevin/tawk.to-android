@@ -17,7 +17,13 @@ interface UserDao {
     @Query("SELECT * FROM users LIMIT :limit OFFSET :offset")
     suspend fun getRangedUsersCache(limit: Int, offset: Int): List<UserCacheEntity>
 
-    @Query("SELECT * FROM users WHERE login LIKE :keyword")
+    @Query("SELECT users.id, users.avatar_url, users.events_url, users.followers_url, " +
+            "users.following_url, users.gists_url, users.gravatar_id, users.html_url," +
+            "users.login, users.node_id, users.organizations_url, users.received_events_url," +
+            "users.repos_url, users.site_admin, users.starred_url, users.subscriptions_url," +
+            "users.type, users.url, users.hasNotes " +
+            "FROM users LEFT JOIN profiles ON profiles.id = users.id " +
+            "WHERE users.login LIKE :keyword OR profiles.notes LIKE :keyword")
     suspend fun searchUserDetail(keyword: String): List<UserCacheEntity>
 
     @Update

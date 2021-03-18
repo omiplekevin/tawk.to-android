@@ -37,6 +37,7 @@ class MainRepository constructor(
             if (!loadMore) {
                 //fetch first cached if there is
                 val initialCached = userDao.getUsersCache()
+                Timber.d("initial cached users: ${initialCached.size}")
                 //emit the cached data
                 emit(DataState.Success(userCacheMapper.mapFromEntityList(initialCached)))
             }
@@ -50,26 +51,28 @@ class MainRepository constructor(
                 pageSize = users.size
                 Timber.d("initializing paging size = $pageSize")
             }
-            Timber.d("paging size = $pageSize")
             for (user in users) {
                 userDao.insert(userCacheMapper.mapToEntity(user))
+                Timber.d("saved: ${user.login}")
             }
-            Timber.d("pagesize: $pageSize, offset: ${offset-1}")
             //offset is minus 1 because of the indexing from the DB
             //Query as follows: SELECT * FROM users LIMIT :limit OFFSET :offset
             //offset came from the current loaded items from the recyclerview
             val cachedUsers = userDao.getRangedUsersCache(pageSize, offset-1)
-
+            Timber.d("new cached users: ${cachedUsers.size}")
             if (!loadMore) {
                 //if first time load of users list
+                Timber.d("emit on loadMore")
                 emit(DataState.Success(userCacheMapper.mapFromEntityList(cachedUsers)))
             } else {
                 //if list is currently paging
+                Timber.d("emit on paging")
                 emit(DataState.LoadMore(userCacheMapper.mapFromEntityList(cachedUsers)))
             }
         } catch (e: Exception) {
             val cachedUsers = userDao.getUsersCache()
             if (cachedUsers.isNotEmpty()) {
+                Timber.d("emit on exception but not empty")
                 emit(DataState.Success(userCacheMapper.mapFromEntityList(cachedUsers)))
             } else {
                 emit(DataState.Error(e))
@@ -113,9 +116,9 @@ class MainRepository constructor(
         try {
             val cachedUsers = userDao.searchUserDetail("%".plus(keyword).plus("%"))
             for (user in cachedUsers) {
-                Timber.d("emitting: ${user.id}")
+                Timber.d("emitting: ${user.id}, ${user.login}")
             }
-            emit(DataState.Success(userCacheMapper.mapFromEntityList(cachedUsers)))
+            emit(DataState.SearchResult(userCacheMapper.mapFromEntityList(cachedUsers)))
         } catch (e: Exception) {
             emit(DataState.Error(e))
         }
